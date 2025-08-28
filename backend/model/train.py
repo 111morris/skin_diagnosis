@@ -24,7 +24,7 @@ import os
 
 # build argument parse 
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", type=str, default="../dataset/train", help="path to input dataset")
+ap.add_argument("-d", "--dataset", type=str, default="../../dataset/train", help="path to input dataset")
 ap.add_argument("-p", "--plot", type=str, default="plot.png", help="path to output loss/accuracy plot")
 ap.add_argument("-m", "--model", type=str, default="Skin_Model.model", help="path to output model")
 args = ap.parse_args()
@@ -65,10 +65,12 @@ labels = np.array(labels)
 # perform one-hot encoding on the labels
 lb = LabelBinarizer()
 labels = lb.fit_transform(labels)
-labels = to_categorical(labels)
+# labels = to_categorical(labels)
 
 # partition the data into training and testing splits using 80% of the data for training and the remaining 20% for testing
-(trainX, testX, trainY, testY) = train_test_split(data, labels, test_size=0.20, stratify=labels, random_state=42)
+(trainX, testX, trainY, testY) = train_test_split(
+ data, labels, test_size=0.20, stratify=labels.argmax(axis=1), random_state=42
+ )
 
 # initialize the training data augmentation object
 trainAug = ImageDataGenerator(
