@@ -4,14 +4,14 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Input 
-from tensorflow.keras.layers import Model
+from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam # Optimizer
 from tensorflow.keras.utils import to_categorical 
 
 from sklearn.preprocessing import LabelBinarizer 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-from sklearn.metrics import confussion_matrix
+from sklearn.metrics import confusion_matrix
 from imutils import paths 
 from matplotlib import pyplot as plt
 import numpy as np 
@@ -21,11 +21,12 @@ import os
 
 
 # build argument parse 
-ap = argparse.ArgumentParse()
+ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--dataset", type=str, default="../dataset/train", help="path to input dataset")
 ap.add_argument("-p", "--plot", type=str, default="plot.png", help="path to output loss/accuracy plot")
 ap.add_argument("-m", "--model", type=str, default="Skin_Model.model", help="path to output model")
-args = varse(app.parse_args())
+args = ap.parse_args()
+
 
 
 data = [] 
@@ -98,8 +99,7 @@ for layer in baseModel.layers:
 # compile our model (this needs to be done after our setting our layers to being non-trainable)
 print("[INFO] compiling model...")
 opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
-model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
-
+model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
 # train the head of the network
 print("[INFO] training head...")
 H = model.fit_generator(
@@ -125,7 +125,7 @@ model.save(args["model"], save_format="h5")
 print(classification_report(testY.argmax(axis=1), predIdxs, target_names=lb.classes_))
 
 # compute the confusion matrix and and use it to derive the raw accuracy, sensitivity, and specificity
-cm = confussion_matrix(testY.argmax(axis=1), predIdxs)
+cm = confusion_matrix(testY.argmax(axis=1), predIdxs)
 total = sum(sum(cm))
 acc = (cm[0, 0] + cm[1, 1]) / total
 sensitivity = cm[0, 0] / (cm[0, 0] + cm[0, 1])
