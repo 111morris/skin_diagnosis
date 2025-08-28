@@ -8,8 +8,6 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam # Optimizer
 from tensorflow.keras.utils import to_categorical 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
-
 from sklearn.preprocessing import LabelBinarizer 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -18,6 +16,7 @@ from imutils import paths
 from matplotlib import pyplot as plt
 import numpy as np 
 import argparse 
+import json
 import cv2
 import os 
 
@@ -77,6 +76,18 @@ trainAug = ImageDataGenerator(
  rotation_range=15,
  fill_mode="nearest"
 )
+
+train_generator = datagen.flow_from_directory(
+ "dataset/train",
+ target_size=(224,224),
+ batch_size=32,
+ class_mode="categorical"
+)
+
+# save the class indices mapping 
+with open("class_indices.txt", "w") as f: 
+ json.dump(train_generator.class_indices, f)
+
 
 # load the VGG19 network, ensuring the head FC layer sets are left off
 baseModel = VGG19(weights="imagenet", include_top=False, input_tensor=Input(shape=(224, 224, 3)))
