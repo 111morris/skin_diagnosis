@@ -42,8 +42,7 @@ BS = 8 #32
 
 # grab the list of images in our dataset directory, then initialize the list of data (i.e., images) and class images 
 print("[INFO] loading images...")
-imagePaths = list(paths.list_images(args["dataset"]))
-
+imagePaths = list(paths.list_images(args.dataset))
 # loop over the image paths
 for imagePath in imagePaths:
  # extract the class label from the filename
@@ -101,7 +100,7 @@ for layer in baseModel.layers:
 
 # compile our model (this needs to be done after our setting our layers to being non-trainable)
 print("[INFO] compiling model...")
-opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
+opt = Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
 model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
 # train the head of the network
 print("[INFO] training head...")
