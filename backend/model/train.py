@@ -7,6 +7,8 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam # Optimizer
 from tensorflow.keras.utils import to_categorical 
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
 
 from sklearn.preprocessing import LabelBinarizer 
 from sklearn.model_selection import train_test_split
@@ -84,9 +86,10 @@ headModel = AveragePooling2D(pool_size=(4, 4))(headModel)
 headModel = Flatten(name="flatten")(headModel)
 headModel = Dense(128, activation="relu")(headModel)
 headModel = Dropout(0.5)(headModel)
-headModel = Dense(4, activation="softmax")(headModel)
+headModel = Dense(128, activation="relu")(headModel)
 headModel = Dropout(0.5)(headModel)
 headModel = Dense(4, activation="softmax")(headModel)
+
 
 # place the head FC model on top of the base model (this will become the actual model we will train)
 model = Model(inputs=baseModel.input, outputs=headModel)
