@@ -139,6 +139,12 @@ model.save(args.model, save_format="h5")
 # show a nicely formatted classification report
 print(classification_report(testY.argmax(axis=1), predIdxs, target_names=lb.classes_))
 
+# save class list next to the model
+
+labels_path = os.path.join(os.path.dirname(__file__), "labels.json")
+with open(labels_path, "w") as f:
+ json.dump(lb.classes_.tolist(), f)
+
 # compute the confusion matrix and and use it to derive the raw accuracy, sensitivity, and specificity
 cm = confusion_matrix(testY.argmax(axis=1), predIdxs)
 total = sum(sum(cm))
