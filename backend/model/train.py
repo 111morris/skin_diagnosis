@@ -33,11 +33,12 @@ args = ap.parse_args()
 data = [] 
 labels = []
 
-# Initial Training Rate, Numner of Epoches, 
-# and Batch Size
+# Initial Training Rate, Numner of Epoches, and Batch Size
+# if training is unstable, you can reduce it to 1e-4
 INIT_LR = 1e-3
 EPOCHS = 25
-BS = 8 #32
+# if you have memory issues, lower the BS {32, 16, 8, ...}
+BS = 4
 
 # grab the list of images in our dataset directory, then initialize the list of data (i.e., images) and class images 
 print("[INFO] loading images...")
