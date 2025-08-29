@@ -25,9 +25,6 @@ else:
  # fallback (hardcoded)
  CLASSES = ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
 
-
-
-
 # Define classes (same order as your training dataset folders)
 CLASSES = ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
 
