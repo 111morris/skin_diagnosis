@@ -77,9 +77,9 @@ trainAug = ImageDataGenerator(
  fill_mode="nearest"
 )
 
-train_generator = datagen.flow_from_directory(
+train_generator = trainAug.flow_from_directory(
  "dataset/train",
- target_size=(224,224),
+ target_size=(224, 224),
  batch_size=32,
  class_mode="categorical"
 )
