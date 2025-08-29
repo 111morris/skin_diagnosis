@@ -134,7 +134,7 @@ predIdxs = np.argmax(predIdxs, axis=1)
 
 # serialize the model to disk
 print("[INFO] saving skin cancer model...")
-model.save(args["model"], save_format="h5")
+model.save(args.model, save_format="h5")
 
 # show a nicely formatted classification report
 print(classification_report(testY.argmax(axis=1), predIdxs, target_names=lb.classes_))
