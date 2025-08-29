@@ -1,4 +1,8 @@
+venv/
 dataset/
+__pycache__/
+*.h5
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
