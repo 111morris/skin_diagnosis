@@ -98,3 +98,34 @@ python train.py --dataset ../../dataset/train --model Skin_Model.h5 --plot plot.
 * A saved model file: `backend/model/Skin_Model.h5`
 * A training plot: `plot.png`
 * A classification report printed in terminal
+
+### Save your class names (IMPORTANT)
+
+Add these lines **in ************`train.py`************ right after** you one‑hot encode labels with `LabelBinarizer` (or after you have `lb.classes_`):
+
+```python
+# save class list next to the model
+import json, os
+labels_path = os.path.join(os.path.dirname(__file__), "labels.json")
+with open(labels_path, "w") as f:
+    json.dump(lb.classes_.tolist(), f)
+```
+
+This produces `backend/model/labels.json` like:
+
+```json
+["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
+```
+
+> The API will load this file to map prediction indices → class names.
+
+---
+
+## 3) Scan the Image
+
+Using `backend/model/ScanImage.py` inside the model folder:
+
+Run:
+```bash
+ python ScanImage.py --image "[input_image_name.png]"
+```
