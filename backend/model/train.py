@@ -2,7 +2,7 @@ from tensorflow.keras.applications import VGG19
 from tensorflow.keras.layers import AveragePooling2D
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Reshape
 from tensorflow.keras.layers import Input 
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam # Optimizer
@@ -12,6 +12,8 @@ from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
+# windows
+# from matplotlib import paths 
 from imutils import paths 
 from matplotlib import pyplot as plt
 import numpy as np 
@@ -26,23 +28,21 @@ ap = argparse.ArgumentParser()
 ap.add_argument("-d", "--dataset", type=str, default="../../dataset/train", help="path to input dataset")
 ap.add_argument("-p", "--plot", type=str, default="plot.png", help="path to output loss/accuracy plot")
 ap.add_argument("-m", "--model", type=str, default="Skin_Model.model", help="path to output model")
-args = ap.parse_args()
-
-
+args = vars(ap.parse_args())
 
 data = [] 
 labels = []
 
 # Initial Training Rate, Numner of Epoches, and Batch Size
 # if training is unstable, you can reduce it to 1e-4
-INIT_LR = 1e-3
+INIT_LR = 1e-4
 EPOCHS = 25
 # if you have memory issues, lower the BS {32, 16, 8, ...}
 BS = 4
 
 # grab the list of images in our dataset directory, then initialize the list of data (i.e., images) and class images 
 print("[INFO] loading images...")
-imagePaths = list(paths.list_images(args.dataset))
+imagePaths = list(paths.list_images(args["dataset"]))
 # loop over the image paths
 for imagePath in imagePaths:
  # extract the class label from the filename
@@ -65,11 +65,13 @@ labels = np.array(labels)
 # perform one-hot encoding on the labels
 lb = LabelBinarizer()
 labels = lb.fit_transform(labels)
-# labels = to_categorical(labels)
+labels = to_categorical(labels)
 
 # partition the data into training and testing splits using 80% of the data for training and the remaining 20% for testing
 (trainX, testX, trainY, testY) = train_test_split(
- data, labels, test_size=0.20, stratify=labels.argmax(axis=1), random_state=42
+ data, labels, test_size=0.20, 
+#  stratify=labels.argmax(axis=1),
+ random_state=42
  )
 
 # initialize the training data augmentation object
@@ -78,28 +80,36 @@ trainAug = ImageDataGenerator(
  fill_mode="nearest"
 )
 
-train_generator = trainAug.flow_from_directory(
+# Load the VGG16 network, ensuring the head FC layer sets are left off
+baseModel = VGG19(weights="imagenet", include_top=False,
+input_tensor=Input(shape=(224, 224, 3)))
+
+
+
+""" train_generator = trainAug.flow_from_directory(
  "dataset/train",
  target_size=(224, 224),
  batch_size=32,
  class_mode="categorical"
 )
+ """
 
-# save the class indices mapping 
+
+""" # save the class indices mapping 
 with open("class_indices.txt", "w") as f: 
  json.dump(train_generator.class_indices, f)
 
 
 # load the VGG19 network, ensuring the head FC layer sets are left off
-baseModel = VGG19(weights="imagenet", include_top=False, input_tensor=Input(shape=(224, 224, 3)))
+baseModel = VGG19(weights="imagenet", include_top=False, input_tensor=Input(shape=(224, 224, 3))) """
 
 # construct the head of the model that will be placed on top of the base model
 headModel = baseModel.output
-headModel = AveragePooling2D(pool_size=(4, 4))(headModel)
+headModel = AveragePooling2D(pool_size=(2, 2))(headModel)
 headModel = Flatten(name="flatten")(headModel)
 headModel = Dense(128, activation="relu")(headModel)
 headModel = Dropout(0.5)(headModel)
-headModel = Dense(128, activation="relu")(headModel)
+headModel = Dense(64, activation="relu")(headModel)
 headModel = Dropout(0.5)(headModel)
 headModel = Dense(5, activation="softmax")(headModel)
 
@@ -114,8 +124,12 @@ for layer in baseModel.layers:
 
 # compile our model (this needs to be done after our setting our layers to being non-trainable)
 print("[INFO] compiling model...")
+""" opt = Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
+model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"]) """
+
 opt = Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
-model.compile(loss="categorical_crossentropy", optimizer=opt, metrics=["accuracy"])
+model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
+
 # train the head of the network
 print("[INFO] training head...")
 H = model.fit(
@@ -135,16 +149,18 @@ predIdxs = np.argmax(predIdxs, axis=1)
 
 # serialize the model to disk
 print("[INFO] saving skin cancer model...")
-model.save(args.model, save_format="h5")
+model.save(args["model"], save_format="h5")
 
 # show a nicely formatted classification report
 print(classification_report(testY.argmax(axis=1), predIdxs, target_names=lb.classes_))
 
-# save class list next to the model
+
+
+""" # save class list next to the model
 
 labels_path = os.path.join(os.path.dirname(__file__), "labels.json")
 with open(labels_path, "w") as f:
- json.dump(lb.classes_.tolist(), f)
+ json.dump(lb.classes_.tolist(), f) """
 
 # compute the confusion matrix and and use it to derive the raw accuracy, sensitivity, and specificity
 cm = confusion_matrix(testY.argmax(axis=1), predIdxs)
@@ -154,6 +170,7 @@ sensitivity = cm[0, 0] / (cm[0, 0] + cm[0, 1])
 specificity = cm[1, 1] / (cm[1, 0] + cm[1, 1])
 
 
+# Show the confusion matrix, accuracy, sensitivity, and specificity
 print(cm)
 print("acc: {:.4f}".format(acc))
 print("sensitivity: {:.4f}".format(sensitivity))
@@ -169,9 +186,11 @@ plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
 try: 
  plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
 except:
-  print("Erro drawing val_loss")
+ print("Error drawing val_loss")
  
 plt.plot(np.arange(0, N), H.history["accuracy"], label="train_acc")
+
+
 try:
  plt.plot(np.arange(0, N), H.history["val_accuracy"], label="val_acc")
 except:
