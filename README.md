@@ -117,7 +117,7 @@ This produces `backend/model/labels.json` like:
 ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
 ```
 
-> The API will load this file to map prediction indices → class names.
+[//]: # (> The API will load this file to map prediction indices → class names.)
 
 ---
 
@@ -128,4 +128,12 @@ Using `backend/model/ScanImage.py` inside the model folder:
 Run:
 ```bash
  python ScanImage.py --image "[input_image_name.png]"
+```
+
+You should see something like this or familiar
+
+```
+1/1 ━━━━━━━━━━━━━━━━━━━━ 1s 877ms/step
+[D] Skin Allergy
+[P] 74.75%
 ```
