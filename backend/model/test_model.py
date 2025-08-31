@@ -10,8 +10,7 @@ LABELS_PATH = os.path.join(os.path.dirname(__file__), 'labels.json')
 model = load_model(MODEL_PATH)
 classes = json.load(open(LABELS_PATH))
 
-
-img = image.load_img('SAMPLE.jpg', target_size=(224, 224)) # put a real image here
+img = image.load_img('nail.jpg', target_size=(224, 224)) 
 x = image.img_to_array(img) / 255.0
 x = np.expand_dims(x, axis=0)
 
