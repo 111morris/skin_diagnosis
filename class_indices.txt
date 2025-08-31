@@ -1,0 +1,1 @@
+{"Acne": 0, "Hairloss": 1, "Nail Fungus": 2, "Normal": 3, "Skin Allergy": 4}
