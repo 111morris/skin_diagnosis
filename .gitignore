@@ -2,7 +2,6 @@ venv/
 dataset/
 __pycache__/
 *.h5
-*.png
 .idea
 
 # Byte-compiled / optimized / DLL files
