@@ -13,11 +13,6 @@ model = keras.models.load_model("Skin_Model.h5")
 
 # Define labels (make sure they match your training order or load from labels.json)
 labels = ["Acne", "Hair Fall", "Nail Fungus", "Normal", "Skin Allergy"]
-# labels = ["Skin Allergy", "Hair Fall", "Nail Fungus", "Normal", "Skin Allergy"]
-# labels = ["Hair Fall", "Skin Allergy", "Nail Fungus", "Normal", "Skin Allergy"]
-# labels = ["Skin Allergy", "Hair Fall", "Nail Fungus", "Normal", "Skin Allergy"]
-# labels = ["Skin Allergy", "Hair Fall", "Nail Fungus", "Normal", "Skin Allergy"]
-# labels = ["Skin Allergy", "Hair Fall", "Nail Fungus", "Normal", "Skin Allergy"]
 
 # Preprocess the image
 image = cv2.imread(args["image"])
