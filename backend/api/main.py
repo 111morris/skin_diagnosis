@@ -57,3 +57,46 @@ async def predict(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
  uvicorn.run(app, host="0.0.0.0", port=8000)
+ 
+
+""" THIS IS ANOTHER VERSION OF main.py file. IF YOU WANT TO USE IT, JUST REPLACE THE CONTENTS OF main.py WITH THE CONTENTS BELOW IF YOU WANT QUICK TESTING / LOCAL USE """
+
+""" from fastapi import FastAPI, UploadFile, File
+from tensorflow import keras
+import numpy as np
+from PIL import Image
+import io
+
+app = FastAPI()
+
+# load your trained model
+model = keras.models.load_model("../model/Skin_Model.h5")
+
+# labels for your classes
+labels = ["Acne", "Hair Fall", "Nail Fungus", "Normal", "Skin Allergy"]
+
+@app.get("/")
+def home():
+    return {"message": "API is alive "}
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    # read image
+    contents = await file.read()
+    image = Image.open(io.BytesIO(contents)).convert("RGB")
+    image = image.resize((224, 224))
+
+    # preprocess
+    image = np.array(image) / 255.0
+    image = np.expand_dims(image, axis=0)  # add batch dimension
+
+    # predict
+    predictions = model.predict(image)
+    max_prob = float(np.max(predictions)) * 100
+    predicted_label = labels[np.argmax(predictions)]
+
+    return {
+        "label": predicted_label,
+        "confidence": round(max_prob, 2)
+    }
+ """
