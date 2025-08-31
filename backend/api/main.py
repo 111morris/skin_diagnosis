@@ -38,6 +38,9 @@ app.add_middleware(
  allow_methods=["*"],
  allow_headers=["*"],
 )
+@app.get("/")
+def root():
+    return {"message": "Skin Diagnosis API is running!. Add /docs to use SWAGGER UI"}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
