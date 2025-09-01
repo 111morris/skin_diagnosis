@@ -1,8 +1,31 @@
+# Skin Diagnosis App 
+
+A machine learning–powered app that helps users diagnose common skin conditions from images.  
+Built with **FastAPI (backend)** + **Flutter (frontend)**.
+
+---
+
+## Features
+-  Upload or capture an image of a skin condition
+-  AI model predicts condition (Acne, Hairloss, Nail Fungus, Normal, Skin Allergy)
+-  Confidence score shown with prediction
+-  Deployed backend with REST API (FastAPI + Render)
+-  Cross-platform mobile app (Flutter)
+
+---
+
+## Tech Stack
+- **Backend**: FastAPI, TensorFlow/Keras, Uvicorn  
+- **Frontend**: Flutter, Dart, http, image_picker  
+- **Deployment**: Render (Backend), Android (.apk for distribution)  
+
+---
+
+
 # Skin Diagnosis App – Setup & Run Guide
 
 A step‑by‑step guide to train the model, run the API, and connect the frontend.
 
----
 
 ## 0) Prerequisites
 
@@ -46,6 +69,7 @@ python-multipart
 
 ---
 
+
 ## 1) Project Structure 
 
 ```
@@ -72,7 +96,7 @@ skin_diagnosis/
 
 ---
 
-## 2) Train the Model
+## 2) How to train the Model
 
 > You can run training from **project root** or from **`backend/model/`**. Ensure the dataset path is correct for your working directory.
 
@@ -137,3 +161,51 @@ You should see something like this or familiar
 [D] Skin Allergy
 [P] 74.75%
 ```
+
+
+## Frontend (Flutter App)
+
+1. Navigate to the frontend:
+```bash
+cd skin_diagnosis/frontend
+```
+
+2. Get dependencies:
+```bash
+flutter pub get
+```
+
+3. Run the app:
+
+```bash
+flutter run
+```
+
+## API Endpoints
+*GET /* Head check 
+*POST /predict* Upload image and get prediction 
+- Request: form-data with file (image)
+
+- Response:
+
+```bash
+{
+  "disease": "Acne",
+  "confidence": 0.93
+}
+```
+
+## APK Installation
+
+Download the **.apk** file from 📱[Releases](https://drive.google.com/file/d/1v5R3KofOxtuDVvsTWJzpB8hZAoMG-TsS/view?usp=sharing)
+
+
+Install on your Android device (allow unknown sources if needed)
+
+
+## Roadmap
+
+- Add more skin conditions
+- Improve model accuracy
+- iOS support
+- Secure user authentication
