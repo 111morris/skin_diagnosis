@@ -1,7 +1,7 @@
 venv/
 dataset/
 __pycache__/
-# *.h5
+# *.h5 
 .idea
 
 # Byte-compiled / optimized / DLL files
@@ -211,3 +211,124 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# flutter 
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+node_modules/
+.env
+
+
+# flutter two 
+
+# Flutter/Dart related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+
+# iOS
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/App.framework
+ios/Flutter/engine/
+ios/Flutter/ephemeral/
+
+# Android
+android/.gradle/
+android/captures/
+android/.idea/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# macOS
+macos/Flutter/ephemeral/
+macos/Flutter/Flutter.framework
+macos/Flutter/App.framework
+macos/.symlinks/
+macos/Pods/
+macos/Runner/GeneratedPluginRegistrant.swift
+
+# Windows
+windows/ephemeral/
+windows/flutter/ephemeral/
+
+# Linux
+linux/flutter/ephemeral/
+linux/ephemeral/
+
+# Web
+web/.dart_tool/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Misc
+*.log
+*.tmp
+*.swp
+*.lock
+*.DS_Store
+*.bak
+
+# Exceptions (if needed, un-ignore some files)
+!/android/app/src/main/res/
+!/ios/Runner/Assets.xcassets/
