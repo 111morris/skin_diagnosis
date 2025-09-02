@@ -197,7 +197,7 @@ flutter run
 
 ## APK Installation
 
-Download the **.apk** file from 📱[Releases](https://drive.google.com/file/d/1v5R3KofOxtuDVvsTWJzpB8hZAoMG-TsS/view?usp=sharing)
+Download the **.apk** file from 📱[Releases_v1](https://drive.google.com/file/d/1v5R3KofOxtuDVvsTWJzpB8hZAoMG-TsS/view?usp=sharing)
 
 
 Install on your Android device (allow unknown sources if needed)
