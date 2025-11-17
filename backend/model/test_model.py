@@ -15,3 +15,7 @@ x = image.img_to_array(img) / 255.0
 x = np.expand_dims(x, axis=0)
 
 
+preds = model.predict(x)[0]
+idx = int(np.argmax(preds))
+print('Pred vector:', preds)
+print('Class:', classes[idx], 'Confidence:', float(preds[idx]))
