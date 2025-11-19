@@ -86,7 +86,7 @@ SYSTEM_PROMPT = (
 def root():
     return {"message": "Skin Diagnosis API v2.0 is running!", "docs": "/docs"}
 
-@app.post("/predict", dependencies=[Depends(verify_api_key)])
+@app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     if model is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -118,7 +118,7 @@ async def predict(file: UploadFile = File(...)):
     logger.info(f"Prediction: {result}")
     return result
 
-@app.post("/chat", dependencies=[Depends(verify_api_key)])
+@app.post("/chat")
 async def chat(user_msg: str):
     if llm is None or tok is None:
         raise HTTPException(status_code=503, detail="Chat service unavailable")
