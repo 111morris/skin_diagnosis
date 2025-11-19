@@ -1,105 +1,150 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import uvicorn
 import numpy as np
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
-from PIL import Image
 import json
 import os
-import io
+import logging
+from typing import List
 
-# Load trained model
-MODEL_PATH = "../model/Skin_Model.h5"
-model = load_model(MODEL_PATH)
+# LLM imports
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
 
-# Load class names from saved JSON 
-CLASS_INDEX_PATH = "../model/class_indices.json"
+# Local imports
+from config import settings
+from utils import verify_api_key, validate_image, logger
 
-if os.path.exists(CLASS_INDEX_PATH):
- with open(CLASS_INDEX_PATH) as f:
-  class_indices = json.load(f)
-  # Reverse mapping: index → class name
-  CLASSES = [cls for cls, idx in sorted(class_indices.items(), key=lambda x: x[1])]
-else:
- # fallback (hardcoded)
- CLASSES = ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
+app = FastAPI(title="Skin Diagnosis API", version="2.0")
 
-# Define classes (same order as your training dataset folders)
-CLASSES = ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
-
-app = FastAPI()
-
-# Allow frontend (Flutter) to call API
+# CORS
 app.add_middleware(
- CORSMiddleware,
- allow_origins=["*"],
- allow_credentials=True,
- allow_methods=["*"],
- allow_headers=["*"],
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+# Global Exception Handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal Server Error. Please contact support."},
+    )
+
+# Load Resources
+logger.info("Loading resources...")
+
+# 1. Load Skin Model
+try:
+    model = load_model(settings.MODEL_PATH)
+    logger.info("✅ Skin Model loaded")
+except Exception as e:
+    logger.error(f"❌ Failed to load Skin Model: {e}")
+    model = None
+
+# 2. Load Labels
+try:
+    if os.path.exists(settings.CLASS_INDEX_PATH):
+        with open(settings.CLASS_INDEX_PATH, "r") as f:
+            CLASSES = json.load(f)
+            # If it's a dict (old format), convert to list, else assume list
+            if isinstance(CLASSES, dict):
+                 CLASSES = [cls for cls, idx in sorted(CLASSES.items(), key=lambda x: x[1])]
+    else:
+        logger.warning("⚠️ Labels file not found, using default.")
+        CLASSES = ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
+    logger.info(f"✅ Classes loaded: {CLASSES}")
+except Exception as e:
+    logger.error(f"❌ Failed to load classes: {e}")
+    CLASSES = ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
+
+# 3. Load LLM
+try:
+    logger.info(f"⏳ Loading LLM: {settings.LLM_MODEL_NAME}...")
+    tok = AutoTokenizer.from_pretrained(settings.LLM_MODEL_NAME)
+    llm = AutoModelForSeq2SeqLM.from_pretrained(settings.LLM_MODEL_NAME, torch_dtype=torch.float32)
+    logger.info("✅ LLM loaded")
+except Exception as e:
+    logger.error(f"❌ Failed to load LLM: {e}")
+    tok = None
+    llm = None
+
+SYSTEM_PROMPT = (
+    "You are a helpful AI dermatology assistant. "
+    "Only answer questions about skin, hair or nails. "
+    "If the question is off-topic, politely redirect."
+)
+
 @app.get("/")
 def root():
-    return {"message": "Skin Diagnosis API is running!. Add /docs to use SWAGGER UI"}
+    return {"message": "Skin Diagnosis API v2.0 is running!", "docs": "/docs"}
 
-@app.post("/predict")
+@app.post("/predict", dependencies=[Depends(verify_api_key)])
 async def predict(file: UploadFile = File(...)):
- contents = await file.read()
- image = Image.open(io.BytesIO(contents)).convert("RGB")
- image = image.resize((224, 224))
- image = img_to_array(image) / 255.0
- image = np.expand_dims(image, axis=0)
- preds = model.predict(image)[0]
- idx = np.argmax(preds)
- result = {
-  "disease": CLASSES[idx],
-  "confidence": float(preds[idx])
- }
- return result
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+        
+    image = await validate_image(file)
+    
+    # Preprocess
+    image = image.resize((224, 224))
+    image_arr = img_to_array(image) / 255.0
+    image_arr = np.expand_dims(image_arr, axis=0)
+    
+    # Predict
+    preds = model.predict(image_arr)[0]
+    idx = np.argmax(preds)
+    confidence = float(preds[idx])
+    
+    # Responsible AI: Uncertainty / Low Confidence Check
+    # If confidence is low (e.g. < 0.6), we might want to flag it
+    warning = None
+    if confidence < 0.6:
+        warning = "Low confidence prediction. Please consult a specialist."
+        
+    result = {
+        "disease": CLASSES[idx],
+        "confidence": confidence,
+        "warning": warning
+    }
+    
+    logger.info(f"Prediction: {result}")
+    return result
 
+@app.post("/chat", dependencies=[Depends(verify_api_key)])
+async def chat(user_msg: str):
+    if llm is None or tok is None:
+        raise HTTPException(status_code=503, detail="Chat service unavailable")
+
+    # Basic Safety Filter (Keyword based for now, can be improved)
+    unsafe_keywords = ["kill", "suicide", "bomb", "weapon"]
+    if any(k in user_msg.lower() for k in unsafe_keywords):
+        return {"reply": "I cannot answer that query. If you are in danger, please call emergency services."}
+
+    prompt = f"{SYSTEM_PROMPT}\nPatient: {user_msg}\nDermatologist:"
+    inputs = tok(prompt, return_tensors="pt")
+    
+    with torch.no_grad():
+        out = llm.generate(
+            **inputs,
+            max_new_tokens=100,
+            temperature=0.4,
+            do_sample=True,
+            top_p=0.9,
+            pad_token_id=tok.eos_token_id,
+        )
+    
+    reply = tok.decode(out[0], skip_special_tokens=True)
+    reply = reply.split("Dermatologist:")[-1].strip()
+    
+    return {"reply": reply}
 
 if __name__ == "__main__":
- uvicorn.run(app, host="0.0.0.0", port=8000)
- 
-
-""" THIS IS ANOTHER VERSION OF main.py file. IF YOU WANT TO USE IT, JUST REPLACE THE CONTENTS OF main.py WITH THE CONTENTS BELOW IF YOU WANT QUICK TESTING / LOCAL USE """
-
-""" from fastapi import FastAPI, UploadFile, File
-from tensorflow import keras
-import numpy as np
-from PIL import Image
-import io
-
-app = FastAPI()
-
-# load your trained model
-model = keras.models.load_model("../model/Skin_Model.h5")
-
-# labels for your classes
-labels = ["Acne", "Hair Fall", "Nail Fungus", "Normal", "Skin Allergy"]
-
-@app.get("/")
-def home():
-    return {"message": "API is alive "}
-
-@app.post("/predict")
-async def predict(file: UploadFile = File(...)):
-    # read image
-    contents = await file.read()
-    image = Image.open(io.BytesIO(contents)).convert("RGB")
-    image = image.resize((224, 224))
-
-    # preprocess
-    image = np.array(image) / 255.0
-    image = np.expand_dims(image, axis=0)  # add batch dimension
-
-    # predict
-    predictions = model.predict(image)
-    max_prob = float(np.max(predictions)) * 100
-    predicted_label = labels[np.argmax(predictions)]
-
-    return {
-        "label": predicted_label,
-        "confidence": round(max_prob, 2)
-    }
- """
+    uvicorn.run(app, host="0.0.0.0", port=8000)

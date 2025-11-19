@@ -4,3 +4,6 @@ tensorflow
 pillow
 python-multipart
 numpy
+transformers
+torch        # CPU-only wheel, 180 MB instead of 2 GB
+sentencepiece
