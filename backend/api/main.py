@@ -9,10 +9,10 @@ import json
 import os
 import logging
 from typing import List
+from pydantic import BaseModel
 
 # LLM imports
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-import torch
+import google.generativeai as genai
 
 # Local imports
 from config import settings
@@ -65,20 +65,23 @@ except Exception as e:
     logger.error(f"❌ Failed to load classes: {e}")
     CLASSES = ["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
 
-# 3. Load LLM
+# 3. Configure Gemini
 try:
-    logger.info(f"⏳ Loading LLM: {settings.LLM_MODEL_NAME}...")
-    tok = AutoTokenizer.from_pretrained(settings.LLM_MODEL_NAME)
-    llm = AutoModelForSeq2SeqLM.from_pretrained(settings.LLM_MODEL_NAME, torch_dtype=torch.float32)
-    logger.info("✅ LLM loaded")
+    if settings.GEMINI_API_KEY:
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        llm_model = genai.GenerativeModel(settings.LLM_MODEL_NAME)
+        logger.info(f"✅ Gemini configured with model: {settings.LLM_MODEL_NAME}")
+    else:
+        logger.warning("⚠️ GEMINI_API_KEY not found. Chat features will be disabled.")
+        llm_model = None
 except Exception as e:
-    logger.error(f"❌ Failed to load LLM: {e}")
-    tok = None
-    llm = None
+    logger.error(f"❌ Failed to configure Gemini: {e}")
+    llm_model = None
 
 SYSTEM_PROMPT = (
     "You are a helpful AI dermatology assistant. "
     "Only answer questions about skin, hair or nails. "
+    "Keep your answers concise and helpful. "
     "If the question is off-topic, politely redirect."
 )
 
@@ -114,37 +117,41 @@ async def predict(file: UploadFile = File(...)):
         "confidence": confidence,
         "warning": warning
     }
-    
+
     logger.info(f"Prediction: {result}")
     return result
 
-@app.post("/chat")
-async def chat(user_msg: str):
-    if llm is None or tok is None:
+class ChatIn(BaseModel):
+    user_msg: str
+
+
+@app.post("/chat", dependencies=[Depends(verify_api_key)])
+async def chat(payload: ChatIn):
+    if llm_model is None:
+        if not settings.GEMINI_API_KEY:
+             raise HTTPException(status_code=503, detail="Chat service unavailable. Missing GEMINI_API_KEY.")
         raise HTTPException(status_code=503, detail="Chat service unavailable")
 
-    # Basic Safety Filter (Keyword based for now, can be improved)
-    unsafe_keywords = ["kill", "suicide", "bomb", "weapon"]
-    if any(k in user_msg.lower() for k in unsafe_keywords):
+    # safety filter (unchanged)
+    unsafe = ["kill", "suicide", "bomb", "weapon"]
+    if any(k in payload.user_msg.lower() for k in unsafe):
         return {"reply": "I cannot answer that query. If you are in danger, please call emergency services."}
 
-    prompt = f"{SYSTEM_PROMPT}\nPatient: {user_msg}\nDermatologist:"
-    inputs = tok(prompt, return_tensors="pt")
-    
-    with torch.no_grad():
-        out = llm.generate(
-            **inputs,
-            max_new_tokens=100,
-            temperature=0.4,
-            do_sample=True,
-            top_p=0.9,
-            pad_token_id=tok.eos_token_id,
+    try:
+        chat_session = llm_model.start_chat(
+            history=[
+                {"role": "user", "parts": [SYSTEM_PROMPT]},
+                {"role": "model", "parts": ["Understood. I am ready to assist with skin, hair, and nail questions."]},
+            ]
         )
-    
-    reply = tok.decode(out[0], skip_special_tokens=True)
-    reply = reply.split("Dermatologist:")[-1].strip()
-    
+        response = chat_session.send_message(payload.user_msg)
+        reply = response.text.strip()
+    except Exception as e:
+        logger.error(f"Gemini generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating response.\nGemini Error:{e}")
+
     return {"reply": reply}
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
