@@ -1,211 +1,164 @@
-# Skin Diagnosis App 
+# Skin Diagnosis App
 
-A machine learning–powered app that helps users diagnose common skin conditions from images.  
+A machine learning–powered app that helps users diagnose common skin conditions from images.
 Built with **FastAPI (backend)** + **Flutter (frontend)**.
 
 ---
 
 ## Features
--  Upload or capture an image of a skin condition
--  AI model predicts condition (Acne, Hairloss, Nail Fungus, Normal, Skin Allergy)
--  Confidence score shown with prediction
--  Deployed backend with REST API (FastAPI + Render)
--  Cross-platform mobile app (Flutter)
+
+- **Image Diagnosis**: Upload or capture an image to predict skin conditions (Acne, Hairloss, Nail Fungus, Normal, Skin Allergy).
+- **AI Chatbot**: Ask questions about skin, hair, and nails using the integrated Google Gemini AI.
+- **Responsible AI**: Includes a low-confidence warning system for uncertain predictions.
+- **Cross-Platform**: Mobile app built with Flutter for Android (and iOS ready).
 
 ---
 
 ## Tech Stack
-- **Backend**: FastAPI, TensorFlow/Keras, Uvicorn  
-- **Frontend**: Flutter, Dart, http, image_picker  
-- **Deployment**: Render (Backend), Android (.apk for distribution)  
+
+- **Backend**: FastAPI, TensorFlow/Keras, Uvicorn, Google Gemini AI
+- **Frontend**: Flutter, Dart, http, image_picker
+- **Deployment**: Render (Backend), Android (.apk)
 
 ---
 
 
-# Skin Diagnosis App – Setup & Run Guide
-
-A step‑by‑step guide to train the model, run the API, and connect the frontend.
-
-
-## 0) Prerequisites
-
-* Python 3.9+ (3.12 works)
-* Git (optional)
-
-## 0.1) Cloning the project
-```bash
-git clone https://github.com/111morris/skin_diagnosis.git
-```
-
-change the directory to skin_diagnosis 
-
-```bash
-cd skin_diagnosis
-```
-
-activate the vertual environment
-
-```bash
-# from project root
-python3 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install --upgrade pip
-pip install -r requirements.txt # or install packages listed below
-```
-
-**Minimal requirements (if you don’t have a file yet):**
-
-```
-fastapi
-uvicorn
-numpy
-pillow
-tensorflow
-scikit-learn
-imutils
-matplotlib
-python-multipart
-```
-
----
-
-
-## 1) Project Structure 
+## Project Structure
 
 ```
 skin_diagnosis/
 ├── backend/
 │   ├── api/
-│   │   └── main.py
+│   │   ├── main.py           # FastAPI application & endpoints
+│   │   ├── config.py         # Configuration settings
+│   │   ├── utils.py          # Helper functions
+│   │   └── requirements.txt  # Backend dependencies
 │   └── model/
-│       ├── train.py
-│       ├── Skin_Model.h5         # ← created after training
-│       └── labels.json           # ← class names saved during training
-├── dataset/                      # not committed to git
-│   ├── train/
-│   │   ├── Acne/
-│   │   ├── Hairloss/
-│   │   ├── Nail Fungus/
-│   │   ├── Normal/
-│   │   └── Skin Allergy/
-│   └── test/...
-├── frontend/                     # Flutter app (or other)
-├── requirements.txt
+│       ├── train.py          # Training script
+│       ├── Skin_Model.h5     # Trained model
+│       └── labels.json       # Class names
+├── frontend/
+│   └── hope/                 # Flutter application source code
+├── dataset/                  # Training dataset (not in git)
 └── README.md
 ```
 
 ---
 
-## 2) How to train the Model
+## Setup & Run Guide
 
-> You can run training from **project root** or from **`backend/model/`**. Ensure the dataset path is correct for your working directory.
+### 1. Backend Setup
 
-### Option A: Run from **project root**
+**Prerequisites**: Python 3.9+
 
-```bash
-python backend/model/train.py \
-  --dataset dataset/train \
-  --model backend/model/Skin_Model.h5 \
-  --plot backend/model/plot.png
-```
+1.  Navigate to the backend API directory:
 
-### Option B: Run from **backend/model/**
+    ```bash
+    cd backend/api
+    ```
 
-```bash
-cd backend/model
-python train.py --dataset ../../dataset/train --model Skin_Model.h5 --plot plot.png
-```
+2.  Create and activate a virtual environment:
 
-### What you should expect
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate        # Windows: venv\Scripts\activate
+    ```
 
-* Console prints: `[INFO] loading images...`, training progress per epoch
-* A saved model file: `backend/model/Skin_Model.h5`
-* A training plot: `plot.png`
-* A classification report printed in terminal
+3.  Install dependencies:
 
-### Save your class names (IMPORTANT)
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-Add these lines **in ************`train.py`************ right after** you one‑hot encode labels with `LabelBinarizer` (or after you have `lb.classes_`):
+4.  **Configuration**:
 
-```python
-# save class list next to the model
-import json, os
-labels_path = os.path.join(os.path.dirname(__file__), "labels.json")
-with open(labels_path, "w") as f:
-    json.dump(lb.classes_.tolist(), f)
-```
+    - Create a `.env` file in `backend/api/` (optional, or set env vars).
+    - **Required for Chat**: Set `GEMINI_API_KEY=your_api_key_here` to enable the AI chatbot.
 
-This produces `backend/model/labels.json` like:
+5.  Run the Server:
+    ```bash
+    python main.py
+    # OR
+    uvicorn main:app --reload
+    ```
+    The API will be available at `http://localhost:8000`.
 
-```json
-["Acne", "Hairloss", "Nail Fungus", "Normal", "Skin Allergy"]
-```
+### 2. Frontend Setup (Flutter)
 
-[//]: # (> The API will load this file to map prediction indices → class names.)
+**Prerequisites**: Flutter SDK
+
+1.  Navigate to the Flutter app directory:
+
+    ```bash
+    cd frontend/hope
+    ```
+
+2.  Install dependencies:
+
+    ```bash
+    flutter pub get
+    ```
+
+3.  Run the app:
+    ```bash
+    flutter run
+    ```
 
 ---
 
-## 3) Scan the Image
-
-Using `backend/model/ScanImage.py` inside the model folder:
-
-Run:
-```bash
- python ScanImage.py --image "[input_image_name.png]"
-```
-
-You should see something like this or familiar
-
-```
-1/1 ━━━━━━━━━━━━━━━━━━━━ 1s 877ms/step
-[D] Skin Allergy
-[P] 74.75%
-```
-
-
-## Frontend (Flutter App)
-
-1. Navigate to the frontend:
-```bash
-cd skin_diagnosis/frontend
-```
-
-2. Get dependencies:
-```bash
-flutter pub get
-```
-
-3. Run the app:
-
-```bash
-flutter run
-```
-
 ## API Endpoints
-*GET /* Head check 
-*POST /predict* Upload image and get prediction 
-- Request: form-data with file (image)
 
-- Response:
+### `GET /`
+
+Health check. Returns API status.
+
+### `POST /predict`
+
+Upload an image to get a diagnosis.
+
+- **Body**: `multipart/form-data` with `file` field.
+- **Response**:
+  ```json
+  {
+    "disease": "Acne",
+    "confidence": 0.93,
+    "warning": null
+  }
+  ```
+
+### `POST /chat`
+
+Chat with the AI dermatologist.
+
+- **Headers**: `x-api-key` (if configured)
+- **Body**:
+  ```json
+  {
+    "user_msg": "What is the best treatment for dry skin?"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "reply": "For dry skin, it is recommended to..."
+  }
+  ```
+
+---
+
+## Model Training
+
+To retrain the model, navigate to `backend/model/` and run:
 
 ```bash
-{
-  "disease": "Acne",
-  "confidence": 0.93
-}
+python train.py --dataset ../../dataset/train --model Skin_Model.h5 --plot plot.png
 ```
 
-## APK Installation
-
-Download the **.apk** file from 📱 [Releases_v1](https://drive.google.com/file/d/1V6z062Dfc2t0664eJVdtxdRREbK0seUk/view?usp=drive_link)
-
-
-Install on your Android device (allow unknown sources if needed)
-
+---
 
 ## Roadmap
 
-- Add more skin conditions
-- Improve model accuracy
-- iOS support
-- Secure user authentication
+- [ ] Add more skin conditions
+- [ ] Improve model accuracy
+- [ ] iOS support
+- [ ] Secure user authentication
