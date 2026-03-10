@@ -33,6 +33,7 @@ skin_diagnosis/
 │   │   ├── config.py         # Configuration settings
 │   │   ├── utils.py          # Helper functions
 │   │   └── requirements.txt  # Backend dependencies
+│   ├── chatbot/              # Standalone RAG-based AI chatbot (Flask/LangChain)
 │   └── model/
 │       ├── train.py          # Training script
 │       ├── Skin_Model.h5     # Trained model
@@ -103,6 +104,33 @@ skin_diagnosis/
     ```bash
     flutter run
     ```
+
+### 3. Chatbot Setup (Standalone Service)
+
+**Prerequisites**: Conda, Python 3.12
+
+The `backend/chatbot/` directory contains a standalone AI Chatbot service built with Flask and LangChain.
+
+1.  Navigate to the chatbot directory:
+
+    ```bash
+    cd backend/chatbot
+    ```
+
+2.  Create and activate a conda environment:
+
+    ```bash
+    conda create -n hope-chatbot python=3.12 -y
+    conda activate hope-chatbot
+    ```
+
+3.  Install dependencies:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  Configure specific environment variables in `.env` (like Pincone API keys, OpenAI API keys) as needed to run the standalone service.
 
 ---
 
